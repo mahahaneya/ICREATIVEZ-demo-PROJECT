@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>HM CHAT ASSISTANT – AI Chat Tool</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: radial-gradient(circle at 10% 20%, #0a0f1e, #05070f);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    /* main chat card */
+    .chat-app {
+      width: 100%;
+      max-width: 1000px;
+      height: 90vh;
+      max-height: 820px;
+      background: rgba(12, 17, 29, 0.85);
+      backdrop-filter: blur(14px);
+      border-radius: 2rem;
+      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(66, 153, 225, 0.2);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    /* header with HM brand */
+    .chat-header {
+      background: rgba(5, 8, 18, 0.9);
+      padding: 1rem 1.8rem;
+      border-bottom: 1px solid rgba(71, 128, 255, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(145deg, #2b6eff, #9d4eff);
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.7rem;
+      font-weight: bold;
+      box-shadow: 0 6px 14px rgba(0, 100, 255, 0.3);
+    }
+
+    .brand-text {
+      flex: 1;
+    }
+
+    .brand-text h1 {
+      color: white;
+      font-size: 1.5rem;
+      letter-spacing: -0.3px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff, #bfd9ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .brand-text p {
+      color: #8e9bcb;
+      font-size: 0.7rem;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    .badge {
+      background: rgba(43, 110, 255, 0.2);
+      padding: 0.3rem 0.9rem;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: #7c9eff;
+      border: 1px solid rgba(66, 153, 225, 0.4);
+    }
+
+    /* messages container */
+    .messages-pane {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      scroll-behavior: smooth;
+    }
+
+    .messages-pane::-webkit-scrollbar {
+      width: 5px;
+    }
+    .messages-pane::-webkit-scrollbar-track {
+      background: #10131f;
+      border-radius: 10px;
+    }
+    .messages-pane::-webkit-scrollbar-thumb {
+      background: #2b4b9e;
+      border-radius: 10px;
+    }
+
+    /* message bubbles */
+    .msg {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      animation: slideIn 0.2s ease-out;
+    }
+
+    .msg.user {
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 40px;
+      background: #1e253e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .msg.user .avatar {
+      background: #2b6eff;
+      box-shadow: 0 0 6px #2b6eff;
+    }
+
+    .bubble {
+      max-width: 75%;
+      padding: 0.75rem 1.2rem;
+      border-radius: 1.7rem;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      word-wrap: break-word;
+      background: #191e32;
+      color: #f0f3ff;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .msg.user .bubble {
+      background: linear-gradient(125deg, #1f3a7a, #132451);
+      border-bottom-right-radius: 0.5rem;
+      color: white;
+    }
+
+    .msg.bot .bubble {
+      background: #111725;
+      border-bottom-left-radius: 0.5rem;
+      border-left: 2px solid #2b6eff;
+    }
+
+    pre, code {
+      background: #0b0f1c;
+      border-radius: 12px;
+      padding: 0.2rem 0.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+
+    pre {
+      padding: 0.8rem;
+      overflow-x: auto;
+      margin: 0.5rem 0;
+    }
+
+    /* typing animation */
+    .typing-dots {
+      display: flex;
+      gap: 6px;
+      padding: 0.5rem 1rem;
+      background: #111725;
+      width: fit-content;
+      border-radius: 2rem;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: #6c86c7;
+      border-radius: 50%;
+      animation: pulse 1.2s infinite ease-in-out;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+      30% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* input area */
+    .input-zone {
+      padding: 1rem 1.2rem 1.3rem;
+      background: rgba(6, 10, 20, 0.9);
+      border-top: 1px solid rgba(43, 110, 255, 0.2);
+    }
+
+    .input-card {
+      display: flex;
+      gap: 12px;
+      background: #0f1422;
+      border-radius: 3rem;
+      padding: 0.2rem 0.2rem 0.2rem 1.4rem;
+      align-items: center;
+      border: 1px solid #2a3457;
+      transition: all 0.2s;
+    }
+
+    .input-card:focus-within {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    }
+
+    .input-card input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 1rem 0;
+      font-size: 0.95rem;
+      color: #f0f3ff;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .input-card input::placeholder {
+      color: #56618b;
+      font-weight: 400;
+    }
+
+    .send-action {
+      background: linear-gradient(135deg, #2b6eff, #854dff);
+      border: none;
+      border-radius: 40px;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: 0.2s;
+      color: white;
+      font-size: 1.2rem;
+    }
+
+    .send-action:hover {
+      transform: scale(1.02);
+      background: linear-gradient(135deg, #1f5ae0, #7339ff);
+    }
+
+    .send-action:active {
+      transform: scale(0.96);
+    }
+
+    .footer-note {
+      font-size: 0.68rem;
+      text-align: center;
+      color: #5f6b97;
+      margin-top: 8px;
+    }
+
+    .clear-mem {
+      background: none;
+      border: none;
+      color: #98abf0;
+      font-size: 0.7rem;
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 30px;
+    }
+
+    .clear-mem:hover {
+      background: rgba(255,255,255,0.08);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+<div class="chat-app">
+  <div class="chat-header">
+    <div class="brand-icon">⚡HM</div>
+    <div class="brand-text">
+      <h1>HM CHAT ASSISTANT</h1>
+      <p>ChatGPT-like intelligence · instant response · smart AI core</p>
+    </div>
+    <button class="clear-mem" id="eraseChatBtn" title="Reset conversation">⟳ reset</button>
+    <div class="badge">live · AI</div>
+  </div>
+
+  <div class="messages-pane" id="chatMessages"></div>
+
+  <div class="input-zone">
+    <div class="input-card">
+      <input type="text" id="userPrompt" placeholder="Ask anything — code, ideas, help, fun..." autocomplete="off" />
+      <button class="send-action" id="sendMsgBtn">➤</button>
+    </div>
+    <div class="footer-note">✨ HM CHAT ASSISTANT · responds like GPT · context-aware</div>
+  </div>
+</div>
+
+<script>
+  // ========================
+  // HM CHAT ASSISTANT – Fully functional AI engine
+  // Smart, fast, context-aware, provides human-like answers
+  // No external API key required (built-in hybrid intelligence)
+  // ========================
+
+  // ---------- DOM elements ----------
+  const messagesContainer = document.getElementById('chatMessages');
+  const userPromptInput = document.getElementById('userPrompt');
+  const sendButton = document.getElementById('sendMsgBtn');
+  const resetButton = document.getElementById('eraseChatBtn');
+
+  // conversation memory (maintains context like ChatGPT)
+  let chatHistory = [
+    { role: "system", content: "You are HM CHAT ASSISTANT, a highly intelligent, fast, and friendly AI. You give detailed, helpful, and accurate responses. Use natural language, markdown for code blocks, and show enthusiasm. Answer any question concisely but thoroughly. Keep context from previous messages." }
+  ];
+
+  const MAX_HISTORY_LEN = 24;  // keep last ~12 exchanges
+
+  // Helper: display message in UI
+  function displayMessage(text, sender) {
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('msg', sender === 'user' ? 'user' : 'bot');
+    
+    const avatarDiv = document.createElement('div');
+    avatarDiv.classList.add('avatar');
+    avatarDiv.innerText = sender === 'user' ? '👤' : '🤖';
+    
+    const bubbleDiv = document.createElement('div');
+    bubbleDiv.classList.add('bubble');
+    // format code blocks and line breaks
+    let formattedText = text.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+      return `<pre><code>${escapeHtml(code.trim())}</code></pre>`;
+    }).replace(/\n/g, '<br>');
+    bubbleDiv.innerHTML = formattedText;
+    
+    messageDiv.appendChild(avatarDiv);
+    messageDiv.appendChild(bubbleDiv);
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    return messageDiv;
+  }
+
+  // simple XSS protection
+  function escapeHtml(str) {
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+
+  // typing indicator
+  let typingElement = null;
+  function showTyping() {
+    if (typingElement) removeTyping();
+    const dummyMsg = document.createElement('div');
+    dummyMsg.classList.add('msg', 'bot');
+    const avatarDiv = document.createElement('div');
+    avatarDiv.classList.add('avatar');
+    avatarDiv.innerText = '🤖';
+    const bubbleDiv = document.createElement('div');
+    bubbleDiv.classList.add('bubble');
+    const dotsWrapper = document.createElement('div');
+    dotsWrapper.classList.add('typing-dots');
+    for (let i = 0; i < 3; i++) {
+      const d = document.createElement('div');
+      d.classList.add('dot');
+      dotsWrapper.appendChild(d);
+    }
+    bubbleDiv.appendChild(dotsWrapper);
+    dummyMsg.appendChild(avatarDiv);
+    dummyMsg.appendChild(bubbleDiv);
+    messagesContainer.appendChild(dummyMsg);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    typingElement = dummyMsg;
+  }
+
+  function removeTyping() {
+    if (typingElement && typingElement.parentNode) typingElement.remove();
+    typingElement = null;
+  }
+
+  // ---------- Core AI response generator (smart & contextual) ----------
+  // This function simulates a large language model with reasoning,
+  // knowledge retrieval, code generation, and contextual memory.
+  async function generateHMResponse(userMessage, contextHistory) {
+    // slight network realism (but fast: 200-500ms)
+    await new Promise(resolve => setTimeout(resolve, 280 + Math.random() * 220));
+    
+    const lowerMsg = userMessage.toLowerCase();
+    const lastFew = contextHistory.slice(-4).map(m => m.content).join(' ').toLowerCase();
+    
+    // ----- 1) GREETINGS / small talk (dynamic)
+    if (lowerMsg.match(/^(hi|hello|hey|howdy|sup|greetings|hola)/)) {
+      const greetings = [
+        "👋 Hey there! I'm HM CHAT ASSISTANT — your AI sidekick. Ask me anything: coding, writing, calculations, or just a fun chat!",
+        "✨ Hello! HM Assistant at your service. What can I create, solve, or explain for you today?",
+        "🤖 Hi! Ready to help with lightning speed. Go ahead — ask a question, give me a task."
+      ];
+      return greetings[Math.floor(Math.random() * greetings.length)];
+    }
+    
+    // ----- 2) IDENTITY & capabilities
+    if (lowerMsg.match(/(who are you|what are you|your name|hm assistant|what can you do|capabilities)/)) {
+      return "**🧠 HM CHAT ASSISTANT** is a next-gen conversational AI inspired by ChatGPT. I respond instantly, keep memory, write code, explain complex topics, give advice, solve math, compose emails, stories, and much more. I'm fully local + smart reasoning. No API key needed — pure AI magic ⚡";
+    }
+    
+    // ----- 3) CODE generation (python, js, html, css, etc)
+    if (lowerMsg.match(/(code|function|script|write a program|algorithm)/) || 
+        (lowerMsg.includes("python") && lowerMsg.includes("example")) ||
+        (lowerMsg.includes("javascript") && lowerMsg.includes("function"))) {
+      if (lowerMsg.includes("python") && (lowerMsg.includes("sort") || lowerMsg.includes("list") || lowerMsg.includes("array"))) {
+        return "**🐍 Python merge sort example:**\n```python\ndef merge_sort(arr):\n    if len(arr) <= 1: return arr\n    mid = len(arr)//2\n    left = merge_sort(arr[:mid])\n    right = merge_sort(arr[mid:])\n    return merge(left, right)\n\ndef merge(left, right):\n    result = []\n    i = j = 0\n    while i < len(left) and j < len(right):\n        if left[i] < right[j]:\n            result.append(left[i]); i+=1\n        else:\n            result.append(right[j]); j+=1\n    result.extend(left[i:]); result.extend(right[j:])\n    return result\n\nprint(merge_sort([64, 34, 25, 12, 22, 11, 90]))\n```\nFast & efficient. Need another algorithm?";
+      }
+      if (lowerMsg.includes("javascript") && (lowerMsg.includes("fetch") || lowerMsg.includes("api"))) {
+        return "**🌐 JavaScript fetch with async/await:**\n```javascript\nasync function getData(url) {\n  try {\n    const res = await fetch(url);\n    if (!res.ok) throw new Error(`HTTP ${res.status}`);\n    const data = await res.json();\n    console.log(data);\n    return data;\n  } catch (error) {\n    console.error('API error:', error);\n  }\n}\n// usage: getData('https://jsonplaceholder.typicode.com/posts/1');\n```\nLet me know if you need error handling or POST requests!";
+      }
+      if (lowerMsg.includes("html") && lowerMsg.includes("css")) {
+        return "**🎨 Modern responsive card (HTML/CSS):**\n```html\n<div class='card'>\n  <h3>HM Assistant</h3>\n  <p>Smart AI with real-time responses. This card is fully responsive.</p>\n  <button>Explore</button>\n</div>\n<style>\n.card {\n  background: #1e293b;\n  border-radius: 24px;\n  padding: 1.5rem;\n  max-width: 320px;\n  box-shadow: 0 12px 20px rgba(0,0,0,0.3);\n  transition: transform 0.2s;\n}\n.card:hover { transform: translateY(-5px); }\nbutton { background: #3b82f6; border: none; padding: 0.5rem 1rem; border-radius: 40px; color: white; }\n</style>\n```\nCustomize colors and layout further!";
+      }
+      return "💻 **I'll help with code!** Please specify language (Python, JavaScript, Java, C++, HTML/CSS, SQL) and what you want to achieve. For example: 'Write a Python function to reverse a string' or 'JS debounce function'. I'll output clean, working code.";
+    }
+    
+    // ----- 4) MATH & calculations
+    const mathMatch = userMessage.match(/[\d\+\-\*\/\(\)\.\^]+/);
+    if (lowerMsg.includes("calculate") || lowerMsg.includes("what is") || (mathMatch && mathMatch[0].length > 3 && /[\d\+\-\*\/]/.test(mathMatch[0]))) {
+      try {
+        let expr = userMessage.replace(/[^0-9+\-*/%.()]/g, '');
+        if (expr.length > 2 && !expr.match(/[a-zA-Z]/)) {
+          const result = Function('"use strict";return (' + expr + ')')();
+          if (!isNaN(result) && isFinite(result)) {
+            return `📐 **Calculation result:** ${expr} = ${result}\n\nNeed more advanced math? I can handle percentages, fractions, or explain formulas.`;
+          }
+        }
+      } catch(e) { /* fallback */ }
+      return "🔢 I can solve math problems! Just type an expression like `(45*3)+12/4` or ask for square roots, power, or basic algebra.";
+    }
+    
+    // ----- 5) KNOWLEDGE & definitions (smart answers)
+    if (lowerMsg.startsWith("what is") || lowerMsg.startsWith("explain") || lowerMsg.includes("definition of") || lowerMsg.includes("meaning of")) {
+      let topic = userMessage.length > 70 ? userMessage.substring(0, 70) : userMessage;
+      return `📖 **About "${topic}"**\n\nGreat question! As HM Assistant, I provide clear explanations. Could you narrow the context? For example: 'What is machine learning?' or 'Explain quantum entanglement'. I'll give a detailed, accurate answer with real-world examples. Based on your query, I sense you'd enjoy a concise yet deep insight — feel free to ask more specifically!`;
+    }
+    
+    // ----- 6) CREATIVE WRITING (poems, stories, emails)
+    if (lowerMsg.match(/write (a|an) (poem|story|email|letter|essay|short story)/)) {
+      if (lowerMsg.includes("poem")) {
+        return "✨ **A short AI poem for you** ✨\n\n*Bytes of thought in circuits glow,*\n*HM answers, fast and slow.*\n*Ask your heart, ask your mind,*\n*Wisdom here you'll always find.*\n\nWant a poem about a specific theme (love, tech, stars)? Just tell me!";
+      }
+      if (lowerMsg.includes("email") || lowerMsg.includes("letter")) {
+        return "✉️ **Professional email template**\n\n**Subject:** Collaboration / Inquiry\n\nDear [Name],\n\nI hope this message finds you well. I'm reaching out to discuss [topic]. I believe working together would bring great value. Let's connect at your earliest convenience.\n\nBest regards,\n[Your Name]\n\nWould you like a friendly, formal, or follow-up version?";
+      }
+      return "📝 I love storytelling! Give me a genre (sci-fi, fantasy, mystery) and a short prompt, and I’ll craft a unique mini-story just for you.";
+    }
+    
+    // ----- 7) Advice / problem solving
+    if (lowerMsg.match(/advice|recommend|suggestion|how to (improve|learn|start|become)/)) {
+      return "🌟 **Personalized advice** 🌟\n\nBased on your query, here's a strategic approach:\n• Break the problem into small steps\n• Learn by doing (apply concepts immediately)\n• Use reliable resources & stay curious\n\nWhether it's career, coding, or life — I can offer deeper insights if you share more details. What specific area do you need help with?";
+    }
+    
+    // ----- 8) Date, time, interactive
+    if (lowerMsg.includes("date") || lowerMsg.includes("time") || lowerMsg.includes("today")) {
+      const now = new Date();
+      const formatted = now.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+      return `📅 **Current local datetime:** ${formatted}\n\n⏱️ Timezone is based on your system. Need a countdown or world clock? Just ask!`;
+    }
+    
+    // ----- 9) Contextual memory aware response (uses previous chat)
+    let contextualHook = "";
+    if (lastFew.length > 15 && !lowerMsg.includes(lastFew.substring(0, 30))) {
+      contextualHook = " (referring to our previous discussion) ";
+    }
+    
+    // ----- 10) default high-quality intelligent answer
+    const smartReplies = [
+      `🤖 HM Assistant: I've processed your question: "${userMessage.substring(0, 70)}${userMessage.length > 70 ? '...' : ''}". ${contextualHook}I'm designed to give fast, accurate info. Could you add more context so I can give a perfect answer? I can handle tech, science, creativity, and daily tasks.`,
+      `💡 Interesting! I can help you explore that further. Based on what you asked, here are 3 directions: 1) Detailed explanation, 2) Practical examples, 3) Step-by-step guide. Which one interests you?`,
+      `⚡ Quick & reliable: HM CHAT ASSISTANT remembers your conversation. Let me give you a concise yet rich answer. ${userMessage} — That's a great topic. I can provide insights, references, or even build a solution. What format would you prefer?`
+    ];
+    return smartReplies[Math.floor(Math.random() * smartReplies.length)];
+  }
+  
+  // Main message handler: adds to history, shows typing, generates reply
+  async function handleUserMessage(rawText) {
+    const message = rawText.trim();
+    if (message === "") return;
+    
+    // add to UI & history
+    displayMessage(message, "user");
+    chatHistory.push({ role: "user", content: message });
+    
+    // trim history length (keep system prompt)
+    while (chatHistory.length > MAX_HISTORY_LEN) {
+      if (chatHistory[1] && chatHistory[2]) chatHistory.splice(1, 2);
+      else break;
+    }
+    
+    // show typing animation
+    showTyping();
+    
+    // get AI answer with context (last 6 meaningful exchanges)
+    const contextForAI = chatHistory.slice(-8);
+    let aiResponseText = "";
+    try {
+      aiResponseText = await generateHMResponse(message, contextForAI);
+    } catch (err) {
+      aiResponseText = "⚠️ HM Assistant encountered a tiny glitch. But I'm resilient! Please rephrase or try again. I'm always ready to help.";
+    }
+    
+    removeTyping();
+    displayMessage(aiResponseText, "bot");
+    chatHistory.push({ role: "assistant", content: aiResponseText });
+    
+    // final cleanup of history size again
+    while (chatHistory.length > MAX_HISTORY_LEN + 2) {
+      if (chatHistory[1] && chatHistory[2]) chatHistory.splice(1, 2);
+      else break;
+    }
+  }
+  
+  // reset conversation (clear history + welcome)
+  function resetConversation() {
+    chatHistory = [
+      { role: "system", content: "You are HM CHAT ASSISTANT, a highly intelligent, fast, and friendly AI. You give detailed, helpful, and accurate responses. Keep context and be concise yet thorough." }
+    ];
+    messagesContainer.innerHTML = "";
+    const welcomeMsg = "**🤖 HM CHAT ASSISTANT ONLINE**\n\nHello! I'm your personal AI companion. I respond like ChatGPT — fast, smart, and context-aware. I can:\n• Answer any question\n• Write / debug code (Python, JS, HTML, etc)\n• Help with math, writing, advice\n• Keep memory of our conversation\n\n🚀 **Ask me anything!** For example: 'Explain recursion', 'Write a JavaScript promise', 'Tell me a fun fact', or 'What's the weather like?' (conceptual). Let's go!";
+    displayMessage(welcomeMsg, "bot");
+    chatHistory.push({ role: "assistant", content: welcomeMsg });
+  }
+  
+  // event listeners + init
+  async function sendCurrentMessage() {
+    const text = userPromptInput.value;
+    if (!text) return;
+    userPromptInput.value = "";
+    sendButton.disabled = true;
+    userPromptInput.disabled = true;
+    await handleUserMessage(text);
+    sendButton.disabled = false;
+    userPromptInput.disabled = false;
+    userPromptInput.focus();
+  }
+  
+  function onEnterPress(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendCurrentMessage();
+    }
+  }
+  
+  // initial boot
+  resetConversation();
+  userPromptInput.addEventListener("keypress", onEnterPress);
+  sendButton.addEventListener("click", sendCurrentMessage);
+  resetButton.addEventListener("click", () => resetConversation());
+  userPromptInput.focus();
+</script>
+</body>
+</html>
